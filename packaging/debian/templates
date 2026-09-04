@@ -1,0 +1,36 @@
+Template: somasave-client/github_pat
+Type: password
+Description: GitHub Personal Access Token:
+ Enter the PAT provided by Jumbostar Solutions to download
+ the StudentPocket API. Contact support@jumbostar.co.ke
+ if you do not have one.
+
+Template: somasave-client/db_host
+Type: string
+Default: localhost
+Description: MySQL database host:
+ IP address or hostname of the SACCO MySQL server.
+
+Template: somasave-client/db_user
+Type: string
+Default: somasave_user
+Description: MySQL database username:
+
+Template: somasave-client/db_password
+Type: password
+Description: MySQL database password:
+
+Template: somasave-client/keystore_password
+Type: password
+Description: SSL keystore password:
+ Password for the SSL certificate keystore (server.p12).
+
+Template: somasave-client/truststore_password
+Type: password
+Description: SSL truststore password:
+ Password for the SSL truststore (truststore.p12).
+
+Template: somasave-client/admin_password
+Type: password
+Description: API admin password:
+ Password for the StudentPocket API admin user.

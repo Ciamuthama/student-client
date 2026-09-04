@@ -1,0 +1,15 @@
+Package: somasave-client
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: curl, dpkg, systemd, debconf (>= 0.5), apt
+Maintainer: Jumbostar Solutions Limited <support@jumbostar.co.ke>
+Description: StudentPocket API installer and manager
+ Provides the somasave command-line tool to install, update,
+ and manage the StudentPocket API server on Debian/Ubuntu systems.
+ .
+ After installing this package, run:
+   sudo somasave install
+ to download and configure the StudentPocket API.
+Homepage: https://jumbostar.co.ke

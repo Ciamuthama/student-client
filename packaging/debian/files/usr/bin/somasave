@@ -1,0 +1,245 @@
+#!/bin/bash
+set -e
+
+CONFIG_FILE="/etc/somasave-client/client.conf"
+ENV_FILE="/etc/somasave/env"
+TMP_DEB="/tmp/somasave_pkg.deb"
+
+# Load config
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "ERROR: Config not found. Run: sudo dpkg-reconfigure somasave-client"
+    exit 1
+fi
+
+source "$CONFIG_FILE"
+
+# Load env (PAT + DB credentials)
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    source "$ENV_FILE"
+    set +a
+fi
+
+if [ -z "$GITHUB_PAT" ]; then
+    echo "ERROR: GITHUB_PAT not configured."
+    echo "Run: sudo dpkg-reconfigure somasave-client"
+    exit 1
+fi
+
+API="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest"
+AUTH="-H \"Authorization: Bearer $GITHUB_PAT\""
+
+# ── Fetch latest release info ────────────────────────────────────────
+fetch_release() {
+    curl -sL \
+        -H "Authorization: Bearer $GITHUB_PAT" \
+        -H "Accept: application/vnd.github+json" \
+        "$API"
+}
+
+# ── Download .deb from release ───────────────────────────────────────
+download_deb() {
+    local RELEASE_JSON="$1"
+
+    LATEST_VERSION=$(echo "$RELEASE_JSON" | grep '"tag_name"' | cut -d '"' -f 4)
+
+    ASSET_ID=$(echo "$RELEASE_JSON" \
+        | grep -B 20 '"name": ".*\.deb"' \
+        | grep '"id":' \
+        | head -n 1 \
+        | cut -d ':' -f 2 \
+        | tr -d ' ,')
+
+    if [ -z "$ASSET_ID" ] || [ "$ASSET_ID" = "null" ]; then
+        echo "ERROR: No .deb asset found in release $LATEST_VERSION"
+        exit 1
+    fi
+
+    echo "Downloading $LATEST_VERSION (asset: $ASSET_ID)..."
+    curl -sL \
+        -H "Authorization: Bearer $GITHUB_PAT" \
+        -H "Accept: application/octet-stream" \
+        -o "$TMP_DEB" \
+        "https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/assets/$ASSET_ID"
+
+    echo "$LATEST_VERSION"
+}
+
+# ── Commands ─────────────────────────────────────────────────────────
+
+cmd_install() {
+    echo "=== SomaSave Install $(date) ==="
+
+    if dpkg -l somasave 2>/dev/null | grep -q '^ii'; then
+        echo "SomaSave API is already installed."
+        echo "To update, run: sudo somasave update"
+        exit 0
+    fi
+
+    RELEASE_JSON=$(fetch_release)
+    VERSION=$(download_deb "$RELEASE_JSON")
+
+    echo "Installing SomaSave API $VERSION..."
+    dpkg -i "$TMP_DEB"
+    apt-get install -f -y
+    rm -f "$TMP_DEB"
+
+    echo ""
+    echo "✓ SomaSave API $VERSION installed"
+    echo ""
+    echo "Enable and start the service:"
+    echo "  sudo systemctl enable somasave"
+    echo "  sudo systemctl start somasave"
+}
+
+cmd_update() {
+    echo "=== SomaSave Update $(date) ==="
+
+    if ! dpkg -l somasave 2>/dev/null | grep -q '^ii'; then
+        echo "SomaSave API is not installed. Run: sudo somasave install"
+        exit 1
+    fi
+
+    CURRENT=$(dpkg -l somasave | grep '^ii' | awk '{print $3}')
+    echo "Current version: $CURRENT"
+
+    RELEASE_JSON=$(fetch_release)
+    LATEST=$(echo "$RELEASE_JSON" | grep '"tag_name"' | cut -d '"' -f 4)
+
+    if [ "v$CURRENT" = "$LATEST" ]; then
+        echo "Already on latest version ($LATEST) — nothing to do"
+        exit 0
+    fi
+
+    echo "Update available: $CURRENT → $LATEST"
+
+    # Backup
+    if [ -f /opt/somasave/somasaveapi.jar ]; then
+        cp /opt/somasave/somasaveapi.jar /opt/somasave/somasaveapi.jar.bak
+        echo "Backup created"
+    fi
+
+    VERSION=$(download_deb "$RELEASE_JSON")
+
+    echo "Installing $VERSION..."
+    dpkg -i "$TMP_DEB"
+    apt-get install -f -y
+    rm -f "$TMP_DEB"
+
+    sleep 5
+
+    if systemctl is-active --quiet somasave; then
+        rm -f /opt/somasave/somasaveapi.jar.bak
+        echo "✓ Updated to $VERSION"
+    else
+        echo "✗ Service failed — rolling back..."
+        if [ -f /opt/somasave/somasaveapi.jar.bak ]; then
+            systemctl stop somasave || true
+            cp /opt/somasave/somasaveapi.jar.bak /opt/somasave/somasaveapi.jar
+            chown somasave:somasave /opt/somasave/somasaveapi.jar
+            systemctl start somasave
+            sleep 3
+            if systemctl is-active --quiet somasave; then
+                echo "✓ Rolled back to $CURRENT"
+            else
+                echo "✗ Rollback failed. Check logs: sudo somasave logs"
+            fi
+        fi
+        exit 1
+    fi
+}
+
+cmd_status() {
+    echo "=== SomaSave Status ==="
+    echo ""
+
+    # Installed version
+    if dpkg -l somasave 2>/dev/null | grep -q '^ii'; then
+        VERSION=$(dpkg -l somasave | grep '^ii' | awk '{print $3}')
+        echo "Installed version : $VERSION"
+    else
+        echo "Installed version : NOT INSTALLED"
+    fi
+
+    # Service status
+    if systemctl is-active --quiet somasave 2>/dev/null; then
+        echo "Service status    : ✓ Running"
+    elif systemctl is-enabled --quiet somasave 2>/dev/null; then
+        echo "Service status    : ✗ Stopped (enabled)"
+    else
+        echo "Service status    : ✗ Not configured"
+    fi
+
+    # Uptime
+    UPTIME=$(systemctl show somasave --property=ActiveEnterTimestamp \
+             --value 2>/dev/null || echo "unknown")
+    echo "Running since     : $UPTIME"
+
+    # Latest available
+    echo ""
+    echo "Checking latest available version..."
+    LATEST=$(fetch_release | grep '"tag_name"' | cut -d '"' -f 4)
+    echo "Latest version    : $LATEST"
+
+    CURRENT=$(dpkg -l somasave 2>/dev/null | grep '^ii' | awk '{print $3}')
+    if [ "v$CURRENT" = "$LATEST" ]; then
+        echo "Update available  : No — up to date"
+    else
+        echo "Update available  : YES — run: sudo somasave update"
+    fi
+}
+
+cmd_logs() {
+    journalctl -u somasave -n "${1:-50}" --no-pager
+}
+
+cmd_restart() {
+    echo "Restarting SomaSave API..."
+    systemctl restart somasave
+    sleep 2
+    if systemctl is-active --quiet somasave; then
+        echo "✓ Service restarted"
+    else
+        echo "✗ Failed to restart. Check: sudo somasave logs"
+        exit 1
+    fi
+}
+
+cmd_reconfigure() {
+    echo "Reconfiguring somasave-client..."
+    dpkg-reconfigure somasave-client
+}
+
+cmd_help() {
+    echo "Usage: somasave <command>"
+    echo ""
+    echo "Commands:"
+    echo "  install      Download and install the SomaSave API"
+    echo "  update       Update to the latest version"
+    echo "  status       Show installation and service status"
+    echo "  logs [n]     Show last n log lines (default: 50)"
+    echo "  restart      Restart the API service"
+    echo "  reconfigure  Re-run configuration wizard"
+    echo "  help         Show this help"
+    echo ""
+    echo "Examples:"
+    echo "  sudo somasave install"
+    echo "  sudo somasave update"
+    echo "  sudo somasave logs 100"
+}
+
+# ── Entry point ───────────────────────────────────────────────────────
+case "${1:-help}" in
+    install)     cmd_install     ;;
+    update)      cmd_update      ;;
+    status)      cmd_status      ;;
+    logs)        cmd_logs "$2"   ;;
+    restart)     cmd_restart     ;;
+    reconfigure) cmd_reconfigure ;;
+    help|--help|-h) cmd_help     ;;
+    *)
+        echo "Unknown command: $1"
+        echo "Run: somasave help"
+        exit 1
+        ;;
+esac

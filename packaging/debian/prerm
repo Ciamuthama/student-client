@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = "remove" ]; then
+    echo "Removing somasave-client..."
+    echo "Note: The somasave API service is not affected."
+    echo "To remove the API itself: sudo apt remove somasave"
+fi
+
+exit 0
