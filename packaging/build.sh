@@ -31,13 +31,6 @@ chmod 755 "$DEB_ROOT/DEBIAN/config"
 cp packaging/debian/files/usr/bin/somasave "$DEB_ROOT/usr/bin/somasave"
 chmod 755 "$DEB_ROOT/usr/bin/somasave"
 
-# Default config
-cat > "$DEB_ROOT/etc/somasave-client/client.conf" << EOF
-# SomaSave Client Configuration
-GITHUB_OWNER=ciamuthama
-GITHUB_REPO=somasaveapi
-EOF
-
 # Build
 mkdir -p "$BUILD_DIR"
 dpkg-deb --build --root-owner-group "$DEB_ROOT" "$BUILD_DIR/${PACKAGE_NAME}_${VERSION}.deb"
