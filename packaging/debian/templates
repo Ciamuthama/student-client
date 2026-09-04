@@ -34,3 +34,4 @@ Template: somasave-client/admin_password
 Type: password
 Description: API admin password:
  Password for the StudentPocket API admin user.
+ 
