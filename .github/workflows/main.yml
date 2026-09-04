@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build:
@@ -32,3 +34,21 @@ jobs:
           files: build/deb/somasave-client_${{ steps.version.outputs.VERSION }}.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to apt repo
+        run: |
+          git clone https://x-access-token:${{ secrets.RELEASES_PAT }}@github.com/ciamuthama/apt.git apt-repo
+          cd apt-repo
+          
+          # Install reprepro
+          sudo apt-get install -y reprepro
+          
+          # Add the new .deb
+          reprepro -b . includedeb stable \
+              ../build/deb/somasave-client_${{ steps.version.outputs.VERSION }}.deb
+          
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add .
+          git commit -m "Release somasave-client v${{ steps.version.outputs.VERSION }}"
+          git push
