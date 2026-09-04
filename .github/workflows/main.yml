@@ -37,7 +37,7 @@ jobs:
 
       - name: Publish to apt repo
         run: |
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/ciamuthama/apt.git apt-repo
+          git clone https://x-access-token:${{ secrets.CLIENT_TOKEN }}@github.com/ciamuthama/apt.git apt-repo
           cd apt-repo
           
           # Install reprepro
