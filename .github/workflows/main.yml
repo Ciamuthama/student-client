@@ -1,0 +1,31 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build .deb
+        run: |
+          chmod +x packaging/build.sh
+          packaging/build.sh ${{ steps.version.outputs.VERSION }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: somasave-client v${{ steps.version.outputs.VERSION }}
+          body_path: CHANGELOG.md
+          files: build/deb/somasave-client_${{ steps.version.outputs.VERSION }}.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
