@@ -21,6 +21,8 @@ cp packaging/debian/conffiles    "$DEB_ROOT/DEBIAN/conffiles"
 cp packaging/debian/config       "$DEB_ROOT/DEBIAN/config"
 cp packaging/debian/templates    "$DEB_ROOT/DEBIAN/templates"
 
+cp packaging/debian/files/etc/somasave-client/client.conf "$DEB_ROOT/etc/somasave-client/client.conf"
+
 sed -i "s/^Version:.*/Version: ${VERSION}/" "$DEB_ROOT/DEBIAN/control"
 
 chmod 755 "$DEB_ROOT/DEBIAN/postinst"
