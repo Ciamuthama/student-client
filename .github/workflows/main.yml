@@ -43,6 +43,21 @@ jobs:
           # Install reprepro
           sudo apt-get install -y reprepro
           
+          # Create conf directory and distributions file if they don't exist
+          mkdir -p conf
+          if [ ! -f conf/distributions ]; then
+            cat > conf/distributions << EOF
+          Origin: somasave
+          Label: somasave apt repository
+          Suite: stable
+          Codename: stable
+          Version: 1.0
+          Architectures: amd64 i386 source
+          Components: main
+          Description: somasave-client releases
+          EOF
+          fi
+          
           # Add the new .deb
           reprepro -b . includedeb stable \
               ../build/deb/somasave-client_${{ steps.version.outputs.VERSION }}.deb
