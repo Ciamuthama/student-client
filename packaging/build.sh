@@ -35,5 +35,5 @@ chmod 755 "$DEB_ROOT/usr/bin/somasave"
 mkdir -p "$BUILD_DIR"
 dpkg-deb --build --root-owner-group "$DEB_ROOT" "$BUILD_DIR/${PACKAGE_NAME}_${VERSION}.deb"
 
-echo ""
+echo "" 
 echo "=== Built: $BUILD_DIR/${PACKAGE_NAME}_${VERSION}.deb ==="
