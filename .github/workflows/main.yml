@@ -72,6 +72,7 @@ jobs:
 
 
           # Add .deb to repo
+          gpg-connect-agent updatestartuptty /bye
           reprepro \
           -b . includedeb stable \
           ../build/deb/somasave-client_${{ steps.version.outputs.VERSION }}.deb
