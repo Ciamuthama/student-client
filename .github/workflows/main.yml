@@ -70,7 +70,6 @@ jobs:
           gpgconf --kill gpg-agent
 
           # Add .deb to repo
-          cd apt-repo
           reprepro \
               --ask-passphrase \
               -b . includedeb stable \
