@@ -48,7 +48,7 @@ jobs:
           Origin: Jumbostar Solutions
           Label: Jumbostar
           Codename: stable
-          Architectures: amd64 all
+          Architectures: amd64 i386 source
           Components: main
           Description: Jumbostar Solutions APT Repository
           SignWith: D122FBBBDA8F1760
