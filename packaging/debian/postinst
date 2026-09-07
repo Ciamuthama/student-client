@@ -47,7 +47,7 @@ EOF
 
 
     echo ""
-    echo "=============================================="
+    echo "----------------------------------------------"
     echo "somasave-client installed successfully."
     echo ""
     echo "Next steps:"
@@ -57,7 +57,7 @@ EOF
     echo ""
     echo "  2. Check status anytime:"
     echo "       sudo somasave status"
-    echo "=============================================="
+    echo "----------------------------------------------"
 fi
 
 exit 0

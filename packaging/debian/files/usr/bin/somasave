@@ -56,9 +56,10 @@ download_deb() {
     fi
 
     echo "Downloading $LATEST_VERSION (asset: $ASSET_ID)..."
-    curl -sL \
+    curl -L \
         -H "Authorization: Bearer $GITHUB_PAT" \
         -H "Accept: application/octet-stream" \
+        -# \
         -o "$TMP_DEB" \
         "https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/assets/$ASSET_ID"
 
