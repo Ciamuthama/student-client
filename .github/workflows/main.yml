@@ -46,20 +46,33 @@ jobs:
           # Create conf directory and distributions file if they don't exist
           mkdir -p conf
           if [ ! -f conf/distributions ]; then
-            cat > conf/distributions << EOF
-          Origin: somasave
-          Label: somasave apt repository
-          Suite: stable
+          cat > conf/distributions << EOF
+          Origin: Jumbostar Solutions
+          Label: Jumbostar
           Codename: stable
-          Version: 1.0
-          Architectures: amd64 i386 source
+          Architectures: amd64 all
           Components: main
-          Description: somasave-client releases
+          Description: Jumbostar Solutions APT Repository
+          SignWith: D122FBBBDA8F1760
+          EOF
+
+          cat > conf/options << EOF
+          verbose
+          ask-passphrase
           EOF
           fi
           
-          # Add the new .deb
-          reprepro -b . includedeb stable \
+          # Configure GPG for signing
+          echo "use-agent" >> ~/.gnupg/gpg.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
+
+          # Add .deb to repo
+          cd apt-repo
+          reprepro \
+              --ask-passphrase \
+              -b . includedeb stable \
               ../build/deb/somasave-client_${{ steps.version.outputs.VERSION }}.deb
           
           git config user.email "actions@github.com"
@@ -67,3 +80,6 @@ jobs:
           git add .
           git commit -m "Release somasave-client v${{ steps.version.outputs.VERSION }}"
           git push
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPGKEY: ${{ secrets.GPG_KEY_ID }}
