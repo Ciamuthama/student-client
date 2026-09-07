@@ -8,8 +8,8 @@ Description: GitHub Personal Access Token:
 Template: somasave-client/github_owner
 Type: string
 Description: Enter github owner:
- IP address or hostname of the SACCO MySQL server.
+ Enter github owners name.
 
 Template: somasave-client/github_repo 
 Type: string
-Description: GITHIB Repository:
+Description: GITHIB Repository Name:
