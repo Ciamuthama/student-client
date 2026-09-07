@@ -70,9 +70,11 @@ jobs:
           # Import GPG private key
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --no-tty --batch --yes
 
+          # Get the key ID and cache the passphrase
+          KEY_ID=$(gpg --list-secret-keys --with-colons | grep fpr | head -1 | cut -d: -f10)
+          echo -n "${{ secrets.GPG_PASSPHRASE }}" | gpg-connect-agent "preset_passphrase $KEY_ID -1" /bye
 
           # Add .deb to repo
-          gpg-connect-agent updatestartuptty /bye
           reprepro \
           -b . includedeb stable \
           ../build/deb/somasave-client_${{ steps.version.outputs.VERSION }}.deb
