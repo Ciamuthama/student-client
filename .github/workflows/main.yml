@@ -37,7 +37,7 @@ jobs:
 
       - name: Publish to apt repo
         run: |
-          git clone https://x-access-token:${{ secrets.CLIENT_TOKEN }}@github.com/ciamuthama/apt.git apt-repo
+          git clone https://x-access-token:${{ secrets.CLIENT_TOKEN }}@://github.com apt-repo
           cd apt-repo
           
           # Install reprepro
@@ -51,12 +51,13 @@ jobs:
           Architectures: amd64 i386 source
           Components: main
           Description: Jumbostar Solutions APT Repository
-          # ADDED: --pinentry-mode loopback instructs reprepro to read from agent cache
-          SignWith: D122FBBBDA8F1760 --pinentry-mode loopback
+          SignWith: D122FBBBDA8F1760
           EOF
 
+          # Pass GPG arguments directly through reprepro options configuration
           cat > conf/options << EOF
           verbose
+          ask-passphrase
           EOF
           
           # Configure GPG for headless signing
@@ -75,8 +76,7 @@ jobs:
           # Import GPG private key
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --no-tty --batch --yes
 
-          # FIXED: Cache the passphrase using a loopback test sign. 
-          # This securely unlocks the key in gpg-agent before reprepro runs.
+          # Cache the passphrase in the agent
           echo "test" | gpg --clearsign --pinentry-mode loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --no-tty --batch --yes > /dev/null
 
           # Add .deb to repo
@@ -89,6 +89,7 @@ jobs:
           git add .
           git commit -m "Release somasave-client v${{ steps.version.outputs.VERSION }}"
           git push
+
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GPGKEY: ${{ secrets.GPG_KEY_ID }}
