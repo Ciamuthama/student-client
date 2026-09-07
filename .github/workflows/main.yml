@@ -43,9 +43,7 @@ jobs:
           # Install reprepro
           sudo apt-get install -y reprepro
           
-          # Create conf directory and distributions file if they don't exist
           mkdir -p conf
-          if [ ! -f conf/distributions ]; then
           cat > conf/distributions << EOF
           Origin: Jumbostar Solutions
           Label: Jumbostar

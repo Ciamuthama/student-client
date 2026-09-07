@@ -6,12 +6,8 @@ set -e
 # Only ask on fresh install or reconfigure
 if [ "$1" = "configure" ] && [ -z "$2" ] || [ "$1" = "reconfigure" ]; then
     db_input high somasave-client/github_pat     || true
-    db_input high somasave-client/db_host        || true
-    db_input high somasave-client/db_user        || true
-    db_input high somasave-client/db_password    || true
-    db_input high somasave-client/keystore_password   || true
-    db_input high somasave-client/truststore_password || true
-    db_input high somasave-client/admin_password || true
+    db_input high somasave-client/github_owner       || true
+    db_input high somasave-client/github_repo          || true
     db_go || true
 fi
 

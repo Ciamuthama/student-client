@@ -46,9 +46,9 @@ EOF
     chown root:root "$ENV_FILE"
 
     # Clear sensitive values from debconf
-    db_reset somasave-client/github_pat         || true
-    db_reset somasave-client/github_owner        || true
-    db_reset somasave-client/github_repo          || true
+    db_set somasave-client/github_pat ""
+    db_set somasave-client/github_owner ""
+    db_set somasave-client/github_repo ""
 
     echo ""
     echo "=============================================="
