@@ -35,9 +35,9 @@ EOF
     # Write environment file — sensitive values
     mkdir -p /etc/somasave
     cat > "$ENV_FILE" << EOF
-GITHUB_PAT=${GITHUB_PAT}
-GITHUB_OWNER=${GITHUB_OWNER}
-GITHUB_REPO=${GITHUB_REPO}
+    GITHUB_PAT=${GITHUB_PAT}
+    GITHUB_OWNER=${GITHUB_OWNER}
+    GITHUB_REPO=${GITHUB_REPO}
 
 EOF
 
@@ -45,10 +45,6 @@ EOF
     chmod 600 "$ENV_FILE"
     chown root:root "$ENV_FILE"
 
-    # Clear sensitive values from debconf
-    db_set somasave-client/github_pat ""
-    db_set somasave-client/github_owner ""
-    db_set somasave-client/github_repo ""
 
     echo ""
     echo "=============================================="
