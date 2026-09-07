@@ -56,7 +56,6 @@ jobs:
 
           cat > conf/options << EOF
           verbose
-          ask-passphrase
           EOF
           
           
@@ -66,16 +65,16 @@ jobs:
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
 
-           # Import GPG private key
+          # Import GPG private key
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --no-tty --batch --yes
         
           gpgconf --kill gpg-agent
 
           # Add .deb to repo
-          reprepro \
-              --ask-passphrase \
-              -b . includedeb stable \
-              ../build/deb/somasave-client_${{ steps.version.outputs.VERSION }}.deb
+          echo "${{ secrets.GPG_PASSPHRASE }}" | reprepro \
+          --passphrase-stdin \
+          -b . includedeb stable \
+          ../build/deb/somasave-client_${{ steps.version.outputs.VERSION }}.deb
           
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
