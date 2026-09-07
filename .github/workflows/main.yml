@@ -70,9 +70,16 @@ jobs:
         
           gpgconf --kill gpg-agent
 
+          # Start gpg-agent with passphrase
+          echo "default-cache-ttl 3600" >> ~/.gnupg/gpg-agent.conf
+          echo "max-cache-ttl 3600" >> ~/.gnupg/gpg-agent.conf
+          gpg-agent --daemon
+
+          # Provide passphrase to gpg-agent
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --sign --output /dev/null
+
           # Add .deb to repo
-          echo "${{ secrets.GPG_PASSPHRASE }}" | reprepro \
-          --passphrase-stdin \
+          reprepro \
           -b . includedeb stable \
           ../build/deb/somasave-client_${{ steps.version.outputs.VERSION }}.deb
           
