@@ -51,27 +51,33 @@ jobs:
           Architectures: amd64 i386 source
           Components: main
           Description: Jumbostar Solutions APT Repository
-          SignWith: D122FBBBDA8F1760
+          # ADDED: --pinentry-mode loopback instructs reprepro to read from agent cache
+          SignWith: D122FBBBDA8F1760 --pinentry-mode loopback
           EOF
 
           cat > conf/options << EOF
           verbose
           EOF
           
-          
-          # Configure GPG for signing
+          # Configure GPG for headless signing
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
           echo "use-agent" >> ~/.gnupg/gpg.conf
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
           echo "default-cache-ttl 3600" >> ~/.gnupg/gpg-agent.conf
           echo "max-cache-ttl 3600" >> ~/.gnupg/gpg-agent.conf
+
+          # Start/reload the agent
+          gpg-connect-agent reloadagent /bye
 
           # Import GPG private key
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --no-tty --batch --yes
 
-
+          # FIXED: Cache the passphrase using a loopback test sign. 
+          # This securely unlocks the key in gpg-agent before reprepro runs.
+          echo "test" | gpg --clearsign --pinentry-mode loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --no-tty --batch --yes > /dev/null
 
           # Add .deb to repo
           reprepro \
