@@ -58,7 +58,7 @@ jobs:
           verbose
           ask-passphrase
           EOF
-          fi
+          
           
           # Configure GPG for signing
           mkdir -p ~/.gnupg 
