@@ -29,7 +29,7 @@ fi
 API="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest"
 AUTH="-H \"Authorization: Bearer $GITHUB_PAT\""
 
-# ── Fetch latest release info ────────────────────────────────────────
+# Fetch latest release info 
 fetch_release() {
     curl -sL \
         -H "Authorization: Bearer $GITHUB_PAT" \
@@ -37,7 +37,7 @@ fetch_release() {
         "$API"
 }
 
-# ── Download .deb from release ───────────────────────────────────────
+# Download .deb from release 
 download_deb() {
     local RELEASE_JSON="$1"
 
@@ -66,10 +66,10 @@ download_deb() {
     echo "$LATEST_VERSION"
 }
 
-# ── Commands ─────────────────────────────────────────────────────────
+# Commands 
 
 cmd_install() {
-    echo "=== SomaSave Install $(date) ==="
+    echo "Install $(date)"
 
     if dpkg -l somasave 2>/dev/null | grep -q '^ii'; then
         echo "SomaSave API is already installed."
@@ -80,28 +80,39 @@ cmd_install() {
     RELEASE_JSON=$(fetch_release)
     VERSION=$(download_deb "$RELEASE_JSON")
 
-    echo "Installing SomaSave API $VERSION..."
-    dpkg -i "$TMP_DEB"
-    apt-get install -f -y
+    echo "Installing SomaSave API $VERSION and its dependencies..."
+    if [ ! -f /etc/apt/sources.list.d/adoptium.list ]; then
+    echo "Adding Adoptium repository for Java 25..."
+    apt-get update && apt-get install -y wget apt-transport-https gnupg >/dev/null
+    
+    mkdir -p /etc/apt/keyrings
+    wget -O - https://adoptium.net | tee /etc/apt/keyrings/adoptium.asc > /dev/null
+    
+    CODENAME=$(lsb_release -cs)
+    echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://adoptium.net ${CODENAME} main" | tee /etc/apt/sources.list.d/adoptium.list > /dev/null
+    
+    apt-get update
+    fi
+    apt-get install -y "$TMP_DEB"
     rm -f "$TMP_DEB"
 
     echo ""
     echo "✓ SomaSave API $VERSION installed"
     echo ""
     echo "Enable and start the service:"
-    echo "  sudo systemctl enable somasave"
-    echo "  sudo systemctl start somasave"
+    echo "  sudo systemctl enable somasaveapi"
+    echo "  sudo systemctl start somasaveapi"
 }
 
 cmd_update() {
-    echo "=== SomaSave Update $(date) ==="
+    echo "Somasaveapi Update $(date) "
 
-    if ! dpkg -l somasave 2>/dev/null | grep -q '^ii'; then
+    if ! dpkg -l somasaveapi 2>/dev/null | grep -q '^ii'; then
         echo "SomaSave API is not installed. Run: sudo somasave install"
         exit 1
     fi
 
-    CURRENT=$(dpkg -l somasave | grep '^ii' | awk '{print $3}')
+    CURRENT=$(dpkg -l somasaveapi | grep '^ii' | awk '{print $3}')
     echo "Current version: $CURRENT"
 
     RELEASE_JSON=$(fetch_release)
@@ -135,12 +146,12 @@ cmd_update() {
     else
         echo "✗ Service failed — rolling back..."
         if [ -f /opt/somasave/somasaveapi.jar.bak ]; then
-            systemctl stop somasave || true
+            systemctl stop somasaveapi || true
             cp /opt/somasave/somasaveapi.jar.bak /opt/somasave/somasaveapi.jar
             chown somasave:somasave /opt/somasave/somasaveapi.jar
-            systemctl start somasave
+            systemctl start somasaveapi
             sleep 3
-            if systemctl is-active --quiet somasave; then
+            if systemctl is-active --quiet somasaveapi; then
                 echo "✓ Rolled back to $CURRENT"
             else
                 echo "✗ Rollback failed. Check logs: sudo somasave logs"
@@ -151,28 +162,28 @@ cmd_update() {
 }
 
 cmd_status() {
-    echo "=== SomaSave Status ==="
+    echo "Somasaveapi Status"
     echo ""
 
     # Installed version
-    if dpkg -l somasave 2>/dev/null | grep -q '^ii'; then
-        VERSION=$(dpkg -l somasave | grep '^ii' | awk '{print $3}')
+    if dpkg -l somasaveapi 2>/dev/null | grep -q '^ii'; then
+        VERSION=$(dpkg -l somasaveapi | grep '^ii' | awk '{print $3}')
         echo "Installed version : $VERSION"
     else
         echo "Installed version : NOT INSTALLED"
     fi
 
     # Service status
-    if systemctl is-active --quiet somasave 2>/dev/null; then
+    if systemctl is-active --quiet somasaveapi 2>/dev/null; then
         echo "Service status    : ✓ Running"
-    elif systemctl is-enabled --quiet somasave 2>/dev/null; then
+    elif systemctl is-enabled --quiet somasaveapi 2>/dev/null; then
         echo "Service status    : ✗ Stopped (enabled)"
     else
         echo "Service status    : ✗ Not configured"
     fi
 
     # Uptime
-    UPTIME=$(systemctl show somasave --property=ActiveEnterTimestamp \
+    UPTIME=$(systemctl show somasaveapi --property=ActiveEnterTimestamp \
              --value 2>/dev/null || echo "unknown")
     echo "Running since     : $UPTIME"
 
@@ -182,7 +193,7 @@ cmd_status() {
     LATEST=$(fetch_release | grep '"tag_name"' | cut -d '"' -f 4)
     echo "Latest version    : $LATEST"
 
-    CURRENT=$(dpkg -l somasave 2>/dev/null | grep '^ii' | awk '{print $3}')
+    CURRENT=$(dpkg -l somasaveapi 2>/dev/null | grep '^ii' | awk '{print $3}')
     if [ "v$CURRENT" = "$LATEST" ]; then
         echo "Update available  : No — up to date"
     else
@@ -191,17 +202,17 @@ cmd_status() {
 }
 
 cmd_logs() {
-    journalctl -u somasave -n "${1:-50}" --no-pager
+    journalctl -u somasaveapi -n "${1:-50}" --no-pager
 }
 
 cmd_restart() {
     echo "Restarting SomaSave API..."
-    systemctl restart somasave
+    systemctl restart somasaveapi
     sleep 2
-    if systemctl is-active --quiet somasave; then
+    if systemctl is-active --quiet somasaveapi; then
         echo "✓ Service restarted"
     else
-        echo "✗ Failed to restart. Check: sudo somasave logs"
+        echo "✗ Failed to restart. Check: sudo somasaveapi logs"
         exit 1
     fi
 }
@@ -226,10 +237,10 @@ cmd_help() {
     echo "Examples:"
     echo "  sudo somasave install"
     echo "  sudo somasave update"
-    echo "  sudo somasave logs 100"
+    echo "  sudo somasaveapi logs 100"
 }
 
-# ── Entry point ───────────────────────────────────────────────────────
+#  Entry point 
 case "${1:-help}" in
     install)     cmd_install     ;;
     update)      cmd_update      ;;
