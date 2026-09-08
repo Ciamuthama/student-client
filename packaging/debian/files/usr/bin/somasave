@@ -83,13 +83,11 @@ cmd_install() {
     echo "Installing SomaSave API $VERSION and its dependencies..."
     if [ ! -f /etc/apt/sources.list.d/adoptium.list ]; then
     echo "Adding Adoptium repository for Java 25..."
-    apt-get update && apt-get install -y wget apt-transport-https gnupg >/dev/null
+    apt-get update && apt-get install -y wget apt-transport-https gpg>/dev/null
     
-    mkdir -p /etc/apt/keyrings
-    wget -O - https://adoptium.net | tee /etc/apt/keyrings/adoptium.asc > /dev/null
     
     CODENAME=$(lsb_release -cs)
-    echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://adoptium.net ${CODENAME} main" | tee /etc/apt/sources.list.d/adoptium.list > /dev/null
+    echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb ${CODENAME} main" | sudo tee /etc/apt/sources.list.d/adoptium.list > /dev/null
     
     apt-get update
     fi
