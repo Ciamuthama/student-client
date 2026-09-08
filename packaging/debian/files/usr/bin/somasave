@@ -85,6 +85,7 @@ cmd_install() {
     echo "Adding Adoptium repository for Java 25..."
     apt-get update && apt-get install -y wget apt-transport-https gpg>/dev/null
     
+    wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor | sudo tee /usr/share/keyrings/adoptium.gpg > /dev/null
     
     CODENAME=$(lsb_release -cs)
     echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb ${CODENAME} main" | sudo tee /etc/apt/sources.list.d/adoptium.list > /dev/null
