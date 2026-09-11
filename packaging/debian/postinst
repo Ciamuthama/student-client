@@ -57,6 +57,8 @@ EOF
     echo ""
     echo "  2. Check status anytime:"
     echo "       sudo somasave status"
+    echo " "
+    echo "Ignore this message if you have already installed the API."
     echo "----------------------------------------------"
 fi
 

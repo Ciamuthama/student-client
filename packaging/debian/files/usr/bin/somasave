@@ -140,7 +140,7 @@ cmd_update() {
 
     sleep 5
 
-    if systemctl is-active --quiet somasave; then
+    if systemctl is-active --quiet somasaveapi; then
         rm -f /opt/somasave/somasaveapi.jar.bak
         echo "✓ Updated to $VERSION"
     else
